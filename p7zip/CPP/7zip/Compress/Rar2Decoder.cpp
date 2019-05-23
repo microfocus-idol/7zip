@@ -80,7 +80,7 @@ static const UInt32 kHistorySize = 1 << 20;
 static const UInt32 kWindowReservSize = (1 << 22) + 256;
 
 CDecoder::CDecoder():
-  m_IsSolid(false)
+  _isSolid(false), _solidAllowed(false)
 {
 }
 
@@ -315,6 +315,10 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   if (inSize == NULL || outSize == NULL)
     return E_INVALIDARG;
 
+  if (_isSolid && !_solidAllowed)
+    return S_FALSE;
+  _solidAllowed = false;
+
   if (!m_OutWindowStream.Create(kHistorySize))
     return E_OUTOFMEMORY;
   if (!m_InBitStream.Create(1 << 20))
@@ -325,12 +329,12 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
   UInt64 pos = 0, unPackSize = *outSize;
   
   m_OutWindowStream.SetStream(outStream);
-  m_OutWindowStream.Init(m_IsSolid);
+  m_OutWindowStream.Init(_isSolid);
   m_InBitStream.SetStream(inStream);
   m_InBitStream.Init();
 
   // CCoderReleaser coderReleaser(this);
-  if (!m_IsSolid)
+  if (!_isSolid)
   {
     InitStructures();
     if (unPackSize == 0)
@@ -338,6 +342,7 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
       if (m_InBitStream.GetProcessedSize() + 2 <= m_PackSize) // test it: probably incorrect;
         if (!ReadTables())
           return S_FALSE;
+      _solidAllowed = true;
       return S_OK;
     }
     if (!ReadTables())
@@ -378,6 +383,9 @@ HRESULT CDecoder::CodeReal(ISequentialInStream *inStream, ISequentialOutStream *
 
   if (!ReadLastTables())
     return S_FALSE;
+
+  _solidAllowed = true;
+
   return m_OutWindowStream.Flush();
 }
 
@@ -394,7 +402,7 @@ STDMETHODIMP CDecoder::SetDecoderProperties2(const Byte *data, UInt32 size)
 {
   if (size < 1)
     return E_INVALIDARG;
-  m_IsSolid = ((data[0] & 1) != 0);
+  _isSolid = ((data[0] & 1) != 0);
   return S_OK;
 }
 

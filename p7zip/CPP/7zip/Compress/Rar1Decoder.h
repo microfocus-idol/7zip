@@ -38,7 +38,8 @@ public:
   UInt32 LastLength;
 
   Int64 m_UnpackSize;
-  bool m_IsSolid;
+  bool _isSolid;
+  bool _solidAllowed;
 
   UInt32 ReadBits(int numBits);
   HRESULT CopyBlock(UInt32 distance, UInt32 len);

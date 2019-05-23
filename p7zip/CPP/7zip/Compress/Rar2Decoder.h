@@ -138,7 +138,8 @@ class CDecoder :
   Byte m_LastLevels[kMaxTableSize];
 
   UInt64 m_PackSize;
-  bool m_IsSolid;
+  bool _isSolid;
+  bool _solidAllowed;
 
   void InitStructures();
   UInt32 ReadBits(unsigned numBits);
